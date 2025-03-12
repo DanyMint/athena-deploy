@@ -1,6 +1,7 @@
-version: "3"
+version: "3.3"
 services:
   athena_ps_db:
+    container_name: athena_ps_db
     image: postgres:17
     environment:
       POSTGRES_DB: "athena_db"
@@ -10,7 +11,7 @@ services:
     ports:
     - "5432:5432"
     volumes:
-      - athenadb-data:/var/lib/postgresql/data
+      - athenadb:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U athena -d athena_db"]
       interval: 10s
@@ -24,21 +25,18 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_DB: "athena_db"
-      - POSTGRES_USER: "athena"
-      - POSTGRES_PASSWORD: "pswd4athena"
-      - POSTGRES_HOST:"athena_ps_db"
-      - POSTGRES_PORT:5432
+      POSTGRES_DB: "athena_db"
+      POSTGRES_USER: "athena"
+      POSTGRES_PASSWORD: "pswd4athena"
+      POSTGRES_HOST: "athena_ps_db"
+      POSTGRES_PORT: 5432
     volumes:
       - ./athena-backend:/app
-    depends_on:
-      athena_ps_db:
-        condition: service_healthy
-    restart: unless-stopped
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn -b 0.0.0.0:8000 myproject.wsgi:application"
+      bash -c "source ./start.sh"
+    depends_on:
+      - athena_ps_db
 
 volumes:
   athenadb:
+
